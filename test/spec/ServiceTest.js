@@ -14,7 +14,7 @@ import { expect } from 'chai'
 
 const appId = 'myClientAppId'
 const getLicensesUri = '/api/v1/me/licenses'
-const getInvoiceUri = '/api/v1/me/orders/123/invoice'
+const getInvoiceUri = '/api/v1/me/orders/123/invoices/456'
 const customHandlerResponse = 'This value is returned by our custom handler'
 
 describe('Service', function () {
@@ -46,7 +46,7 @@ describe('Service', function () {
 
       let sws = new Sws({ appId: appId })
 
-      return sws.ecom.getInvoice(123).then(
+      return sws.ecom.getInvoice(123, 456).then(
         () => {
           const request = sws.ecom.lastRequest
           expect(request.responseType).to.equal('blob')
@@ -69,7 +69,7 @@ describe('Service', function () {
       let sws = new Sws({ appId: appId })
 
       return sws.license.getLicenses().then(
-        () => {
+        (data) => {
           const request = sws.license.lastRequest
           expect(request.responseType).to.equal('json')
           expect(request.headers['Accept']).to.equal('application/json')
@@ -94,7 +94,7 @@ describe('Service', function () {
 
   // Define the custom error handler. The err handler receives the error object returned
   // from the HTTP request.
-  let customErrorCodeHandler = (err) => {
+  let customErrorCodeHandler = (request, err) => {
     return `${customHandlerResponse} ${err.response.status} - ${err.response.data.code}`
   }
 
@@ -143,6 +143,15 @@ describe('Service', function () {
       error: 'Expired Refresh token.',
       handlerName: 'invalidRefreshTokenHandler',
       attachHandler: (client) => { client.invalidRefreshTokenHandler = customErrorCodeHandler }
+    },
+    // Password re-entry required
+    {
+      httpStatus: 401,
+      statusText: 'Unauthorized',
+      code: 2011,
+      error: 'Password re-entry required.',
+      handlerName: 'passwordReEntryRequiredHandler',
+      attachHandler: (client) => { client.passwordReEntryRequiredHandler = customErrorCodeHandler }
     }
   ]
 
@@ -208,7 +217,7 @@ describe('Service', function () {
 
   // Define the custom error handler. The err handler receives the error object returned
   // from the HTTP request.
-  const customErrorHandler = (err) => {
+  const customErrorHandler = (request, err) => {
     return `${customHandlerResponse} ${err.response.status}`
   }
 

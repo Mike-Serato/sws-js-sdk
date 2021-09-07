@@ -75,6 +75,10 @@ This callback is called when an SWS service indicates that an Access token has e
 
 This callback is called when the SWS Identity service indicates that a Refresh token has either expired or is otherwise invalid.
 
+#### Password Re-entry Required callback
+
+This callback is called when the SWS Identity service indicates that a client application must direct the user back to Identity service to re-enter their password.
+
 #### Access Denied callback
 
 This callback is called when an SWS service indicates that a user has insufficient permissions to access the requested resource.
@@ -87,6 +91,10 @@ This callback is called when an SWS service returns a HTTP 500 Application Error
 
 This callback is called when an SWS service returns a HTTP 503 Service Unavailable response.
 
+#### Request Timeout Exceeded callback
+
+This callback is called when an SWS service does not respond within the specified timeout period.
+
 ### Setting callbacks
 
 Callbacks can be attached to all service clients via methods of the `Sws` instance, or to individual service clients:
@@ -94,36 +102,47 @@ Callbacks can be attached to all service clients via methods of the `Sws` instan
 ```javascript
 let sws = new Sws({ appId: 'myAppId' })
 
-let invalidAccessTokenCallback = (err) => {
+let invalidAccessTokenCallback = (request, err) => {
+  // `request` is the request object that returned the error
   // `err` is the error response that was returned from the API call
   return 'Access token is invalid'
 }
-let invalidRefreshTokenCallback = (err) => {
+let invalidRefreshTokenCallback = (request, err) => {
   return 'Refresh token is invalid'
 }
-let accessDeniedCallback = (err) => {
+let reEnterPasswordCallback = (request, err) => {
+  return 'Password must be re-entered'
+}
+let accessDeniedCallback = (request, err) => {
   return 'Access is denied'
 }
-let serviceErrorCallback = (err) => {
-  return 'Access is denied'
+let serviceErrorCallback = (request, err) => {
+  return 'Service error'
 }
-let serviceUnavailableCallback = (err) => {
-  return 'Access is denied'
+let serviceUnavailableCallback = (request, err) => {
+  return 'Service is unavailable'
+}
+let requestTimeoutExceededCallback = (request, err) => {
+  return 'Request timeout exceeded'
 }
 
 // Attach the callback to all service clients
 sws.setInvalidAccessTokenHandler(invalidAccessTokenCallback)
 sws.setInvalidRefreshTokenHandler(invalidRefreshTokenCallback)
+sws.setPasswordReEntryRequiredHandler(reEnterPasswordCallback)
 sws.setAccessDeniedHandler(accessDeniedCallback)
 sws.setServiceErrorHandler(serviceErrorCallback)
 sws.setServiceUnavailableHandler(serviceUnavailableCallback)
+sws.setTimesoutExceededHandler(requestTimeoutExceededCallback)
 
 // Attach the callback to an individual service client
 sws.license.invalidAccessTokenHandler = invalidAccessTokenCallback
 sws.license.invalidRefreshTokenHandler = invalidRefreshTokenCallback
+sws.license.passwordReEntryRequiredHandler = reEnterPasswordCallback
 sws.license.accessDeniedHandler = accessDeniedCallback
 sws.license.serviceErrorHandler = serviceErrorCallback
 sws.license.serviceUnavailableHandler = serviceUnavailableCallback
+sws.license.timeoutExceededHandler = requestTimeoutExceededCallback
 ```
 
 # SwsClient class
@@ -144,9 +163,11 @@ The **Access Token Updated** token callback accepts two arguments: the value of 
 ```javascript
 let sws = new SwsClient({ appId: 'myAppId' })
 
-let accessTokenUpdatedCallback = (token, exp) => {
-  console.log('Access token value is ' + token)
-  console.log('Access token expires on ' + exp.toISOString())
+let accessTokenUpdatedCallback = (accessToken, accessTokenExp, refreshToken, refreshTokenExp) => {
+  console.log('Access token value is ' + accessToken)
+  console.log('Access token expires on ' + accessTokenExp.toISOString())
+  console.log('Refresh token value is ' + refreshToken)
+  console.log('Refresh token expires on ' + refreshTokenExp.toISOString())
 }
 
 // Attach the callback

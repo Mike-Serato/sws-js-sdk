@@ -187,16 +187,16 @@ export default class Ecom extends Service {
    * @param {Number} param.catalogProductId
    * @returns {Promise}
    */
-  addSubscriptionPlanChangeRequest ({ subscriptionId, catalogProductId }) {
+  addSubscriptionPlanChangeRequest ({ subscriptionId, catalogProductId, immediate = false }) {
     return this.fetch(
       this.bearerTokenAuthHeader(),
       this.userId === 0 ? '/api/v1/me/subscriptions/' + subscriptionId + '/planchanges' : '/api/v1/users/' + this.userId +
         '/subscriptions/' + subscriptionId + '/planchanges',
       this.toBody({
-        catalog_product_id: catalogProductId
+        catalog_product_id: catalogProductId,
+        immediate: immediate
       }),
       'POST'
-
     )
   }
 
@@ -204,21 +204,25 @@ export default class Ecom extends Service {
    * Retrieve an invoice PDF for the given order.
    * The logged-in user must be the order's owner.
    * Requires a valid access token.
+   * Defaults to returning pdf if no accept parameter, otherwise it returns json
    *
    * @param orderId ID of the order for which an invoice will be returned.
+   * @param invoiceId ID of the invoice for the order that will be returned.
+   * @param accept Has to be "application/json", "application/pdf"(by deafult) (optional)
    * @return {Promise}
    */
-  getInvoice (orderId) {
+  getInvoice (orderId, invoiceId, accept = 'application/pdf') {
+    const endpointPrefix = (this.userId === 0) ? '/api/v1/me' : `/api/v1/users/${this.userId}`
+    const endpoint = `${endpointPrefix}/orders/${orderId}/invoices/${invoiceId}`
     return this.fetch(
       this.bearerTokenAuthHeader(),
-      this.userId === 0 ? '/api/v1/me/orders/' + orderId + '/invoice' : '/api/v1/users/' + this.userId + '/orders/' +
-        orderId + '/invoice',
+      endpoint,
       null,
       'GET',
       null,
-      'blob',
+      (accept === 'application/pdf') ? 'blob' : 'json',
       {
-        'Accept': 'application/pdf',
+        'Accept': accept,
         'Content-Type': 'application/json'
       }
     )
@@ -319,6 +323,29 @@ export default class Ecom extends Service {
       this.userId === 0 ? '/api/v1/me/vouchers/' + voucherId : '/api/v1/users/' + this.userId + '/vouchers/' + voucherId,
       null,
       'PUT'
+    )
+  }
+
+  /**
+   * Returns Product Recommendations for given user.
+   * Requires a valid access token.
+   *
+   * @param {Object} param
+   * @param {String} param.appName
+   * @param {String} param.appVersion
+   * @param {String} param.catalogCategory
+   * @returns {Promise}
+   */
+  getRecommendations ({ appName = null, appVersion = null, catalogCategory = null } = {}) {
+    return this.fetch(
+      this.bearerTokenAuthHeader(),
+      this.userId === 0 ? '/api/v1/me/recommendations' : '/api/v1/users/' + this.userId + '/recommendations',
+      this.toBody({
+        'app_name': appName,
+        'app_version': appVersion,
+        'catalog_category': catalogCategory
+      }),
+      'GET'
     )
   }
 }

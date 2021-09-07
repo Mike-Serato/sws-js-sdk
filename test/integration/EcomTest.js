@@ -224,10 +224,26 @@ describe('Ecom Tests', function () {
       }
     )
 
+    it(`confirms URI used in 'addSubscriptionPlanChangeRequest()' method with a immediate option, by returning a non-404 HTTP response`,
+      function () {
+        swsClient.userId = 123
+        return swsClient.ecom.addSubscriptionPlanChangeRequest({
+          subscriptionId: '123',
+          catalogProductId: 2323,
+          immediate: true
+        }).then(
+          () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
+          err => {
+            expect(err.httpStatus).not.to.equal(404)
+          }
+        )
+      }
+    )
+
     it(`confirms URI used in 'getInvoice()' method without a user ID by returning a non-404 HTTP response`,
       function () {
         swsClient.userId = 0
-        return swsClient.ecom.getInvoice(123).then(
+        return swsClient.ecom.getInvoice(123, 456).then(
           () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
           err => {
             expect(err.httpStatus).not.to.equal(404)
@@ -239,7 +255,7 @@ describe('Ecom Tests', function () {
     it(`confirms URI used in 'getInvoice()' method with a user ID by returning a non-404 HTTP response`,
       function () {
         swsClient.userId = 123
-        return swsClient.ecom.getInvoice(123).then(
+        return swsClient.ecom.getInvoice(123, 456).then(
           () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
           err => {
             expect(err.httpStatus).not.to.equal(404)
@@ -321,6 +337,68 @@ describe('Ecom Tests', function () {
         swsClient.userId = 123
         return swsClient.ecom.assignVoucher({
           voucherId: 'AB'
+        }).then(
+          () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
+          err => {
+            expect(err.httpStatus).not.to.equal(404)
+          }
+        )
+      }
+    ),
+    it(`confirms URI used in 'getRecommendations()' method with no user ID, by returning a non-404 HTTP response`,
+      function () {
+        swsClient.userId = 0
+        return swsClient.ecom.getRecommendations().then(
+          () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
+          err => {
+            expect(err.httpStatus).not.to.equal(404)
+          }
+        )
+      }
+    ),
+    it(`confirms URI used in 'getRecommendations()' method with user ID, by returning a non-404 HTTP response`,
+      function () {
+        swsClient.userId = 123
+        return swsClient.ecom.getRecommendations().then(
+          () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
+          err => {
+            expect(err.httpStatus).not.to.equal(404)
+          }
+        )
+      }
+    ),
+    it(`confirms URI used in 'getRecommendations()' method with no user ID, with appName param by returning a non-404 HTTP response`,
+      function () {
+        swsClient.userId = 0
+        return swsClient.ecom.getRecommendations({
+          appName: 'serato_dj'
+        }).then(
+          () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
+          err => {
+            expect(err.httpStatus).not.to.equal(404)
+          }
+        )
+      }
+    ),
+    it(`confirms URI used in 'getRecommendations()' method with user ID, with appName and appVersion params by returning a non-404 HTTP response`,
+      function () {
+        swsClient.userId = 0
+        return swsClient.ecom.getRecommendations({
+          appName: 'serato_dj',
+          appVersion: '2.0.0'
+        }).then(
+          () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
+          err => {
+            expect(err.httpStatus).not.to.equal(404)
+          }
+        )
+      }
+    ),
+    it(`confirms URI used in 'getRecommendations()' method with user ID, with catalogCategory param by returning a non-404 HTTP response`,
+      function () {
+        swsClient.userId = 0
+        return swsClient.ecom.getRecommendations({
+          catalogCategory: 'dj'
         }).then(
           () => Promise.reject(new Error('Expected non-2xx HTTP response code')),
           err => {

@@ -17,6 +17,7 @@ export default class Service {
 
     this._invalidAccessTokenHandler = handleFetchError
     this._invalidRefreshTokenHandler = handleFetchError
+    this._passwordReEntryRequiredHandler = handleFetchError
     this._accessDeniedHandler = handleFetchError
     this._timeoutExceededHandler = handleFetchError
     this._serviceErrorHandler = handleFetchError
@@ -137,34 +138,38 @@ export default class Service {
 
         if (err.code === 'ECONNABORTED') {
           // Timeout
-          return Promise.resolve(this.timeoutExceededHandler(err))
+          return Promise.resolve(this.timeoutExceededHandler(request, err))
         }
 
         let status = err.response.status
         let code = err.response.data.code
 
         if (status === 500) {
-          return Promise.resolve(this.serviceErrorHandler(err))
+          return Promise.resolve(this.serviceErrorHandler(request, err))
         } else if (status === 503) {
-          return Promise.resolve(this.serviceUnavailableHandler(err))
+          return Promise.resolve(this.serviceUnavailableHandler(request, err))
         } else if ((status === 403 && code === 2001) || (status === 401 && code === 2002)) {
           // Access token is invalid or expired
           // 403 2001 - Invalid access token
           // 401 2002 - Expired access token
-          return Promise.resolve(this.invalidAccessTokenHandler(err))
+          return Promise.resolve(this.invalidAccessTokenHandler(request, err))
         } else if (status === 400 && (code === 1001 || code === 1007)) {
           // Refresh token is invalid or expired
           // 400 1001 - Invalid Refresh token
           // 400 1007 - Expired Refresh token
-          return Promise.resolve(this.invalidRefreshTokenHandler(err))
+          return Promise.resolve(this.invalidRefreshTokenHandler(request, err))
         } else if (status === 403 && code === 2000) {
           // Permissions error
           // 403 2000 - Access token has insufficient scopes
-          return Promise.resolve(this.accessDeniedHandler(err))
+          return Promise.resolve(this.accessDeniedHandler(request, err))
+        } else if (status === 401 && code === 2011) {
+          // Authorization error
+          // 401 2011 - User is required to re-enter their password
+          return Promise.resolve(this.passwordReEntryRequiredHandler(request, err))
         } else {
           // TODO (maybe): a generic way of injecting custom handlers
           // for any combination of HTTP response + error code.
-          handleFetchError(err)
+          handleFetchError(request, err)
         }
       })
   }
@@ -201,6 +206,23 @@ export default class Service {
    */
   get invalidRefreshTokenHandler () {
     return this._invalidRefreshTokenHandler
+  }
+
+  /**
+   * Set the password re-entry required callback
+   * @param {function} f Callback
+   * @return {void}
+   */
+  set passwordReEntryRequiredHandler (f) {
+    this._passwordReEntryRequiredHandler = f
+  }
+
+  /**
+   * Get the password re-entry required callback
+   * @return {function}
+   */
+  get passwordReEntryRequiredHandler () {
+    return this._passwordReEntryRequiredHandler
   }
 
   /**
@@ -284,10 +306,11 @@ export default class Service {
 /**
  * Default error handler for HTTP fetch error
  *
+ * @param {Object} request Request object
  * @param {Error} err Fetch Error
  * @throws {Error}
  */
-function handleFetchError (err) {
+function handleFetchError (request, err) {
   if (err.response) {
     let errText = err.response.data.error ? err.response.data.error : err.response.data.message
     let error = new Error(errText)
